@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Install Dependencies",
+            "type": "shell",
+            "command": "pip",
+            "args": ["install", "-r", "requirements.txt"],
+            "group": "build",
+            "isBackground": false,
+            "problemMatcher": []
+        },
+        {
+            "label": "Generate Sample Cards",
+            "type": "shell",
+            "command": "python",
+            "args": ["card_generator.py", "data/sample_cards.csv"],
+            "group": "test",
+            "isBackground": false,
+            "problemMatcher": [],
+            "dependsOn": "Install Dependencies"
+        },
+        {
+            "label": "Run Card Generator (Custom File)",
+            "type": "shell",
+            "command": "python",
+            "args": ["card_generator.py", "${input:spreadsheetFile}"],
+            "group": "test",
+            "isBackground": false,
+            "problemMatcher": [],
+            "dependsOn": "Install Dependencies"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "spreadsheetFile",
+            "description": "Path to your spreadsheet file",
+            "default": "data/sample_cards.csv",
+            "type": "promptString"
+        }
+    ]
+}
