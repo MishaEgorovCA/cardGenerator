@@ -37,9 +37,9 @@ class CardGenerator:
         
         # Get settings from config
         card_settings = self.config.get("card_settings", {})
-        self.title_font_size = card_settings.get("title_font_size", 24)
+        self.title_max_font_size = card_settings.get("title_max_font_size", 64)
         self.description_font_size = card_settings.get("description_font_size", 16)
-        self.description_max_font_size = card_settings.get("description_max_font_size", self.title_font_size)
+        self.description_max_font_size = card_settings.get("description_max_font_size", 48)
         self.border_width = card_settings.get("border_width", 8)
         self.text_color = tuple(card_settings.get("text_color", [0, 0, 0]))
         self.title_color = tuple(card_settings.get("title_color", [0, 0, 0]))
@@ -59,7 +59,6 @@ class CardGenerator:
             }
         
         # Load fonts (will try to use system fonts)
-        self.title_font = self._load_font(self.title_font_size, bold=True)
         self.description_font = self._load_font(self.description_font_size)
     
     def _load_config(self, config_path: str) -> Dict:
@@ -201,7 +200,7 @@ class CardGenerator:
         draw.ellipse([x2 - radius * 2, y2 - radius * 2, x2, y2], fill=fill_value)  # Bottom-right
     
     def add_text_to_card(self, image: Image.Image, title: str, description: str, 
-                        title_position: Tuple[int, int], 
+                        title_area: Tuple[int, int, int, int], 
                         description_area: Tuple[int, int, int, int]) -> Image.Image:
         """
         Add title and description text to the card.
@@ -210,7 +209,7 @@ class CardGenerator:
             image: The card image
             title: Card title text
             description: Card description text
-            title_position: (x, y) position for title
+            title_area: (x1, y1, x2, y2) area for title
             description_area: (x1, y1, x2, y2) area for description
             
         Returns:
@@ -219,13 +218,62 @@ class CardGenerator:
         text_image = image.copy()
         draw = ImageDraw.Draw(text_image)
         
-        # Add title with title color
-        draw.text(title_position, title, fill=self.title_color, font=self.title_font)
+        # Add title with scaling to fit area
+        self._draw_scaled_title(draw, title, title_area)
         
         # Add description with text color and word wrapping
         self._draw_wrapped_text(draw, description, description_area, self.description_font)
         
         return text_image
+
+    def _draw_scaled_title(self, draw: ImageDraw.Draw, title: str, 
+                          title_area: Tuple[int, int, int, int]):
+        """Draw title text with automatic scaling to fit the area."""
+        x1, y1, x2, y2 = title_area
+        max_width = x2 - x1
+        max_height = y2 - y1
+        
+        # Get maximum font size from config
+        max_font_size = self.title_max_font_size
+        min_font_size = 12
+        
+        # Try to find the largest font size that fits
+        best_font = None
+        best_font_size = max_font_size
+        
+        # Try different font sizes starting from max and working down
+        for font_size in range(max_font_size, min_font_size - 1, -2):
+            try:
+                test_font = self._load_font(font_size, bold=True)
+                
+                # Get text bounding box
+                bbox = draw.textbbox((0, 0), title, font=test_font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                
+                # Check if text fits within the area
+                if text_width <= max_width and text_height <= max_height:
+                    best_font = test_font
+                    best_font_size = font_size
+                    break
+            except:
+                continue
+        
+        # Fallback if no font size worked
+        if best_font is None:
+            best_font = self._load_font(min_font_size, bold=True)
+        
+        # Get final text dimensions for centering
+        bbox = draw.textbbox((0, 0), title, font=best_font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        
+        # Center the text in the area
+        text_x = x1 + (max_width - text_width) // 2
+        text_y = y1 + (max_height - text_height) // 2
+        
+        # Draw the title
+        draw.text((text_x, text_y), title, fill=self.title_color, font=best_font)
     
     def _draw_wrapped_text(self, draw: ImageDraw.Draw, text: str, 
                           area: Tuple[int, int, int, int], font: ImageFont.FreeTypeFont):
@@ -406,7 +454,7 @@ class CardGenerator:
         
         return result
     
-    def generate_card(self, card_data: Dict, title_pos: Tuple[int, int],
+    def generate_card(self, card_data: Dict, title_area: Tuple[int, int, int, int],
                      description_area: Tuple[int, int, int, int],
                      image_area: Tuple[int, int, int, int]) -> Image.Image:
         """
@@ -414,7 +462,7 @@ class CardGenerator:
         
         Args:
             card_data: Dictionary with card information
-            title_pos: Position for title text
+            title_area: Area for title text
             description_area: Area for description text
             image_area: Area for card image
             
@@ -434,7 +482,7 @@ class CardGenerator:
         # Add text
         title = str(card_data.get('title', ''))
         description = str(card_data.get('description', ''))
-        template = self.add_text_to_card(template, title, description, title_pos, description_area)
+        template = self.add_text_to_card(template, title, description, title_area, description_area)
         
         # Add colored border based on type
         template = self.add_colored_border(template, card_type)
@@ -442,7 +490,7 @@ class CardGenerator:
         return template
     
     def generate_cards_from_spreadsheet(self, spreadsheet_path: str,
-                                      title_pos: Tuple[int, int] = None,
+                                      title_area: Tuple[int, int, int, int] = None,
                                       description_area: Tuple[int, int, int, int] = None,
                                       image_area: Tuple[int, int, int, int] = None):
         """
@@ -450,14 +498,14 @@ class CardGenerator:
         
         Args:
             spreadsheet_path: Path to the spreadsheet file
-            title_pos: Position for card titles (uses config if None)
+            title_area: Area for card titles (uses config if None)
             description_area: Area for card descriptions (uses config if None)
             image_area: Area for card images (uses config if None)
         """
         # Use config settings if parameters not provided
         card_settings = self.config.get("card_settings", {})
-        if title_pos is None:
-            title_pos = tuple(card_settings.get("title_position", [50, 20]))
+        if title_area is None:
+            title_area = tuple(card_settings.get("title_area", [50, 20, 350, 80]))
         if description_area is None:
             description_area = tuple(card_settings.get("description_area", [20, 300, 350, 450]))
         if image_area is None:
@@ -486,7 +534,7 @@ class CardGenerator:
                 }
                 
                 # Generate the card
-                card_image = self.generate_card(card_data, title_pos, description_area, image_area)
+                card_image = self.generate_card(card_data, title_area, description_area, image_area)
                 
                 # Save the card with sanitized filename
                 safe_title = card_data['title'].replace('?', '_').replace(':', '_').replace('/', '_').replace('\\', '_').replace('*', '_').replace('"', '_').replace('<', '_').replace('>', '_').replace('|', '_')

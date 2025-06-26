@@ -1,80 +1,43 @@
 {
-    "card_settings": {
-        "border_width": 47,
-        "title_font_size": 58,
-        "description_font_size": 32,
-        "description_max_font_size": 48,
-        "title_position": [
-            120,
-            120
-        ],
-        "description_area": [
-            120,
-            810,
-            900,
-            1400
-        ],
-        "image_area": [
-            129,
-            278,
-            894,
-            743
-        ],
-        "text_color": [
-            255,
-            255,
-            255
-        ],
-        "title_color": [
-            255,
-            255,
-            255
-        ],
-        "border_corner_radius": 40,
-        "auto_scale_text": true,
-        "image_fill_mode": "fill"
+  "card_settings": {
+    "border_width": 48,
+    "title_max_font_size": 80,
+    "description_font_size": 32,
+    "description_max_font_size": 100,
+    "title_area": [120, 120, 900, 220],
+    "description_area": [120, 810, 900, 1400],
+    "image_area": [129, 278, 894, 743],
+    "text_color": [255, 255, 255],
+    "title_color": [255, 255, 255],
+    "border_corner_radius": 42,
+    "auto_scale_text": true,
+    "image_fill_mode": "fill"
+  },
+  "card_types": {
+    "D": {
+      "name": "D",
+      "color": [28, 55, 128],
+      "description": "D cards - Blue border"
     },
-    "card_types": {
-        "D": {
-            "name": "D",
-            "color": [
-                28,
-                55,
-                128
-            ],
-            "description": "D cards - Blue border"
-        },
-        "V": {
-            "name": "V",
-            "color": [
-                189,
-                187,
-                70
-            ],
-            "description": "V cards - Yellow border"
-        },
-        "P": {
-            "name": "P",
-            "color": [
-                133,
-                48,
-                27
-            ],
-            "description": "P cards - Red border"
-        },
-        "?": {
-            "name": "Mystery",
-            "color": [
-                128,
-                128,
-                128
-            ],
-            "description": "Mystery cards - Gray border"
-        }
+    "V": {
+      "name": "V", 
+      "color": [189, 187, 70],
+      "description": "V cards - Yellow border"
     },
-    "output_settings": {
-        "format": "PNG",
-        "quality": 95,
-        "dpi": 300
+    "P": {
+      "name": "P",
+      "color": [133, 48, 27], 
+      "description": "P cards - Red border"
+    },
+    "?": {
+      "name": "Mystery",
+      "color": [128, 128, 128],
+      "description": "Mystery cards - Gray border"
     }
+  },
+  "output_settings": {
+    "format": "PNG",
+    "quality": 95,
+    "dpi": 300
+  }
 }
